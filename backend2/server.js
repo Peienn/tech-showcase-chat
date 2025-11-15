@@ -18,7 +18,7 @@ const io = new Server(server, {
   transports: ['websocket', 'polling']
 });
 
-const PORT = 3000;
+const PORT = 3001;
 
 // 記憶體存訊息
 let messages = [];

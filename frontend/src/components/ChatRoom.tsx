@@ -12,7 +12,9 @@ interface Message {
   time?: string;
 }
 
-const socket = io("http://localhost:3000");
+const socket = io({
+  path: "/socket.io/"
+});
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ name }) => {
   const [messages, setMessages] = useState<Message[]>([]);
