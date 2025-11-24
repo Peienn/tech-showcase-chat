@@ -20,6 +20,25 @@ const io = new Server(server, {
 
 const PORT = 3000;
 
+
+
+/*
+// --- Redis 測試 ---
+const { createClient } = require('redis');
+const redis = createClient({
+  socket: { host: "192.168.0.101", port: 6379 }
+});
+
+redis.on("error", (err) => console.log("Redis Error:", err));
+redis.on("connect", () => console.log("Redis connected!"));
+
+(async () => {
+  await redis.connect();
+  console.log("Ping:", await redis.ping());
+})();
+// --- End Redis 測試 ---
+*/
+
 // 記憶體存訊息
 let messages = [];
 
@@ -27,11 +46,12 @@ io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
   // 連線後發送歷史訊息
-  socket.emit('chat-message', messages);
+  
 
   // 使用者 join
   socket.on('join', (name) => {
     socket.data.name = name; // 綁定 socket 名稱
+    socket.emit('history', messages);
     console.log(socket.data.name , 'Connect');
     const joinMsg = { sender: 'system', text: `${name} 已加入聊天室` };
     messages.push(joinMsg);
@@ -45,7 +65,9 @@ io.on('connection', (socket) => {
       text,
       time: new Date()
     };
+    
     messages.push(message);
+    console.log("Now, history messages were : ",messages)
     io.emit('chat-message', message);
   });
 

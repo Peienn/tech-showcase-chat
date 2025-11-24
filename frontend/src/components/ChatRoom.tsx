@@ -29,20 +29,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name }) => {
 
 
 useEffect(() => {
-  // join 聊天室
-  socket.emit("join", name);
+  // 處理歷史訊息
+  const handleHistory = (msgs: Message[]) => {
+    setMessages(msgs); // 先把所有歷史訊息放進 state
+  };
 
-  // 監聽訊息
-  const handleMessage = (msg: Message) => {
+  // 處理新訊息
+  const handleChatMessage = (msg: Message) => {
     setMessages((prev) => [...prev, msg]);
   };
-  socket.on("chat-message", handleMessage);
 
-  // 回傳清理函式，而不是直接回傳 socket.off()
+  socket.on("history", handleHistory);
+  socket.on("chat-message", handleChatMessage);
+
+  // 告訴後端加入聊天室
+  socket.emit("join", name);
+
   return () => {
-    socket.off("chat-message", handleMessage);
+    socket.off("history", handleHistory);
+    socket.off("chat-message", handleChatMessage);
   };
 }, [name]);
+
 
 
   const handleSend = () => {
