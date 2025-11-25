@@ -160,3 +160,10 @@ body {
   text-align: center;
   margin-top: 20px;
 }
+
+
+.msg-time {
+  font-size: 0.75rem;
+  color: gray;
+  margin-left: 4px;
+}

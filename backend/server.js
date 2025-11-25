@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const { createClient } = require('redis');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,64 +21,89 @@ const io = new Server(server, {
 
 const PORT = 3000;
 
-
-
-/*
-// --- Redis 測試 ---
-const { createClient } = require('redis');
-const redis = createClient({
-  socket: { host: "192.168.0.101", port: 6379 }
-});
+// ------------------------
+// Redis 客戶端
+// ------------------------
+const redis = createClient({ socket: { host: "192.168.0.101", port: 6379 } });
+const redisSub = createClient({ socket: { host: "192.168.0.101", port: 6379 } });
 
 redis.on("error", (err) => console.log("Redis Error:", err));
-redis.on("connect", () => console.log("Redis connected!"));
+redisSub.on("error", (err) => console.log("RedisSub Error:", err));
 
 (async () => {
   await redis.connect();
-  console.log("Ping:", await redis.ping());
+  await redisSub.connect();
+  console.log("Redis connected!", await redis.ping());
+
+  // 訂閱頻道
+  await redisSub.subscribe("chat-channel", (messageJson) => {
+    const msg = JSON.parse(messageJson);
+    io.emit("chat-message", msg); // 同步給這台 server 的所有使用者
+  });
 })();
-// --- End Redis 測試 ---
-*/
 
-// 記憶體存訊息
-let messages = [];
+// ------------------------
+// Helper: Push + Trim + Publish
+// ------------------------
+async function pushMessageToRedis(message) {
+  const json = JSON.stringify(message);
+  await redis.rPush("chat:messages", json);
+  await redis.lTrim("chat:messages", -50, -1);
+  await redis.publish("chat-channel", json);
+}
 
+// ------------------------
+// Socket.IO 主邏輯
+// ------------------------
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  // 連線後發送歷史訊息
-  
-
   // 使用者 join
-  socket.on('join', (name) => {
-    socket.data.name = name; // 綁定 socket 名稱
-    socket.emit('history', messages);
-    console.log(socket.data.name , 'Connect');
-    const joinMsg = { sender: 'system', text: `${name} 已加入聊天室` };
-    messages.push(joinMsg);
-    io.emit('chat-message', joinMsg);
+  socket.on('join', async (name) => {
+    socket.data.name = name;
+
+    // 讀 Redis 最新 50 條訊息
+    const raw = await redis.lRange("chat:messages", 0, -1);
+    const history = raw.map(item => JSON.parse(item));
+
+    // 建立 join 訊息
+    const joinMsg = {
+      sender: 'system',
+      text: `${name} 已加入聊天室`,
+      time: new Date()
+    };
+
+    // 推到 Redis + publish
+    // 先推到 Redis，但不 publish 給自己
+    await redis.rPush("chat:messages", JSON.stringify(joinMsg));
+    await redis.lTrim("chat:messages", -50, -1);
+
+    // 新使用者看到歷史 + join 訊息
+    socket.emit('history', [...history, joinMsg]);
+
+    console.log(name, "joined");
   });
 
-  // 接收訊息
-  socket.on('chat-message', (text) => {
+  // 接收使用者訊息
+  socket.on('chat-message', async (text) => {
     const message = {
       sender: socket.data.name || 'unknown',
       text,
       time: new Date()
     };
-    
-    messages.push(message);
-    console.log("Now, history messages were : ",messages)
-    io.emit('chat-message', message);
+    await pushMessageToRedis(message);
   });
 
   // 使用者離開
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     if (socket.data.name) {
-      console.log(socket.data.name , 'disconnected');
-      const leaveMsg = { sender: 'system', text: `${socket.data.name} 離開聊天室` };
-      messages.push(leaveMsg);
-      io.emit('chat-message', leaveMsg);
+      const leaveMsg = {
+        sender: 'system',
+        text: `${socket.data.name} 離開聊天室`,
+        time: new Date()
+      };
+      await pushMessageToRedis(leaveMsg);
+      console.log(socket.data.name, 'disconnected');
     }
     console.log('User disconnected:', socket.id);
   });

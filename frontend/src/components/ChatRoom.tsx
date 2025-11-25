@@ -73,10 +73,16 @@ useEffect(() => {
             const senderType =
               msg.sender === "system" ? "system" : msg.sender === name ? "user" : "other";
 
+            // 格式化時間
+            const timeString = msg.time
+              ? new Date(msg.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "";
+
             return (
               <div key={idx} className={`message ${senderType}`}>
                 {senderType === "other" && <strong>{msg.sender}: </strong>}
                 {msg.text}
+                {timeString && <span className="msg-time"> ({timeString})</span>}
               </div>
             );
           })}
