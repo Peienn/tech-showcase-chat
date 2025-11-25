@@ -75,11 +75,10 @@ io.on('connection', (socket) => {
 
     // 推到 Redis + publish
     // 先推到 Redis，但不 publish 給自己
-    await redis.rPush("chat:messages", JSON.stringify(joinMsg));
-    await redis.lTrim("chat:messages", -50, -1);
+    await pushMessageToRedis(joinMsg);
 
     // 新使用者看到歷史 + join 訊息
-    socket.emit('history', [...history, joinMsg]);
+    socket.emit('history', [...history]);
 
     console.log(name, "joined");
   });
