@@ -1,0 +1,154 @@
+// 自定義 DataBase 連線區
+const { redis, postgre } = require('../db');
+
+class Message {
+  /**
+   * 推送訊息到 Redis（快取 + Pub/Sub）
+   * @param {Object} message - {sender, text, time}
+   */
+  static async pushToRedis(message) {
+    try {
+
+
+      const json = JSON.stringify(message);
+      // 1. 存入 Redis List（保留最新 50 條）
+      await redis.rPush('chat:messages', json);
+      await redis.lTrim('chat:messages', -50, -1);
+      // 2. 發布到 Pub/Sub 頻道
+      await redis.publish('chat-channel', json);
+      
+
+
+      // 3. 寫到Redis的同時，也要寫到資料庫(但不包含system發出的)
+      // if (message.sender !== 'system') {
+      //   this.saveToDatabase(message).catch(err => {
+      //     console.error('❌ DB write error:', err);
+      //   });
+      // }
+
+    } catch (err) {
+      console.error('Message.pushToRedis error:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 儲存訊息到資料庫
+   * @param {Object} message - {sender, text, time, userId}
+   */
+  static async saveToDatabase(message) {
+    try {
+      // 如果沒有 userId，先查詢
+      let userId = message.userId;
+    
+      if (!userId) {
+        const result = await postgre.query(
+          'SELECT id FROM users WHERE username = $1',
+          [message.sender]
+        );
+        
+        if (result.rows.length === 0) {
+          console.warn(`⚠️ User not found: ${message.sender}`);
+          return;
+        }
+        
+        userId = result.rows[0].id;
+      }
+      
+      await postgre.query(
+        'INSERT INTO messages (user_id, username, text, created_at) VALUES ($1, $2, $3, $4)',
+        [userId, message.sender, message.text, message.time]
+      );
+    } catch (err) {
+      console.error('Message.saveToDatabase error:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 從 Redis 讀取最新訊息
+   * @returns {Promise<Array>}
+   */
+  static async getFromRedis() {
+    try {
+      const raw = await redis.lRange('chat:messages', 0, -1);
+      return raw.map(item => JSON.parse(item));
+    } catch (err) {
+      console.error('Message.getFromRedis error:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 從資料庫讀取歷史訊息
+   * @param {number} limit - 限制數量
+   * @param {number} offset - 偏移量
+   * @returns {Promise<Array>}
+   */
+  static async getHistory(limit = 100, offset = 0) {
+    try {
+      const result = await postgre.query(
+        `SELECT username, text, created_at as time 
+         FROM messages 
+         ORDER BY created_at DESC 
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+      
+      // 反轉順序（最舊的在前）
+      return result.rows.reverse();
+    } catch (err) {
+      console.error('Message.getHistory error:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 根據時間範圍查詢訊息
+   * @param {Date} startDate 
+   * @param {Date} endDate 
+   * @returns {Promise<Array>}
+   */
+  static async getByDateRange(startDate, endDate) {
+    try {
+      const result = await postgre.query(
+        `SELECT username, text, created_at as time 
+         FROM messages 
+         WHERE created_at BETWEEN $1 AND $2 
+         ORDER BY created_at ASC`,
+        [startDate, endDate]
+      );
+      
+      return result.rows;
+    } catch (err) {
+      console.error('Message.getByDateRange error:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * 搜尋包含關鍵字的訊息
+   * @param {string} keyword 
+   * @param {number} limit 
+   * @returns {Promise<Array>}
+   */
+  static async search(keyword, limit = 50) {
+    try {
+      const result = await postgre.query(
+        `SELECT username, text, created_at as time 
+         FROM messages 
+         WHERE text ILIKE $1 
+         ORDER BY created_at DESC 
+         LIMIT $2`,
+        [`%${keyword}%`, limit]
+      );
+      
+      return result.rows;
+    } catch (err) {
+      console.error('Message.search error:', err);
+      throw err;
+    }
+  }
+}
+
+module.exports = Message;

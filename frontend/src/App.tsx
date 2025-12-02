@@ -53,6 +53,32 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRegister = async () => {
+    if (!name.trim()) return;
+
+    try {
+      const response = await fetch(`/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // 重要：讓瀏覽器儲存 cookie
+        body: JSON.stringify({ username: name.trim() }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setJoined(true);
+      } else {
+        alert(data.error || "登入失敗");
+      }
+    } catch (error) {
+      console.error("登入錯誤:", error);
+      alert("無法連接到伺服器");
+    }
+  };
+
+
+
   const handleLogout = () => {
     setJoined(false);
     setName("");
@@ -78,6 +104,7 @@ const App: React.FC = () => {
           onKeyDown={(e) => e.key === "Enter" && handleJoin()}
         />
         <button onClick={handleJoin}>加入</button>
+        <button onClick={handleRegister}>註冊</button>
       </div>
     );
   }

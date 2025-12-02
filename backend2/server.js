@@ -182,6 +182,8 @@ io.on('connection', (socket) => {
 
       // 接收使用者訊息
       socket.on('chat-message', async (text) => {
+
+        console.log(text);
         // 再次驗證 session（防止 session 過期）
         if (!socket.request.session || !socket.request.session.username) {
           socket.emit('auth-required');
