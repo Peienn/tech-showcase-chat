@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && xcopy /E /Y dist\\* C:\\nginx\\www\\",
     "lint": "eslint .",
     "preview": "vite preview"
   },

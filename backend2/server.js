@@ -199,6 +199,8 @@ io.on('connection', (socket) => {
         };
         //儲存到redis
         await pushMessageToRedis(message);
+      
+
       });
 
       // 使用者登出

@@ -6,13 +6,11 @@ class User {
    * @param {string} username 
    * @returns {Promise<{id: number, username: string}>}
    */
-  static async findOrCreate(username) {
+  static async insertUser(username) {
     try {
       const result = await postgre.query(
         `INSERT INTO users (username, last_login_at) 
-         VALUES ($1, NOW()) 
-         ON CONFLICT (username) 
-         DO UPDATE SET last_login_at = NOW()
+         VALUES ($1, NOW())         
          RETURNING id, username`,
         [username]
       );

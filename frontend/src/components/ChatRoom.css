@@ -1,169 +1,270 @@
 /* 全域背景 */
 body {
-  background-color: #f3f4f6;
-  font-family: "Segoe UI", sans-serif;
-  margin: 0;
-  padding: 0;
+    background-color: #f3f4f6;
+    font-family: "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
-/* 登入畫面 */
+/* 登入畫面 (保持不變) */
 .join-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 
 .join-container input {
-  padding: 10px;
-  font-size: 16px;
-  width: 250px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-top: 10px;
+    padding: 10px;
+    font-size: 16px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 10px;
 }
 
 .join-container button {
-  margin-top: 15px;
-  padding: 10px 20px;
-  border: none;
-  background-color: #4a90e2;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
+    margin-top: 15px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .join-container button:hover {
-  background-color: #3b7ac3;
+    background-color: #3b7ac3;
 }
 
-/* 聊天室主體：80% 高度 */
+/* 聊天室主體 */
 .chatroom-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 80vh;
-  width: 80%;
-  margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    width: 80%;
+    margin: auto;
 }
 
 .chat-box {
-  width: 100%;
-  height: 100%;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .chat-title {
-  background: #4a90e2;
-  color: white;
-  text-align: center;
-  padding: 15px;
-  margin: 0;
+    background: #4a90e2;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    margin: 0;
+    /* 確保標題固定在最上方 */
+    flex-shrink: 0; 
 }
 
 .chat-name {
-  text-align: center;
-  color: #555;
-  margin: 10px 0;
+    text-align: center;
+    color: #555;
+    margin: 10px 0;
+    /* 確保名字區域固定大小 */
+    flex-shrink: 0; 
 }
 
+/* 訊息容器 */
 .messages {
-  flex: 1; /* 自動撐滿剩餘空間 */
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 10px;
-  background: #fff;
+    flex: 1; /* 自動撐滿剩餘空間 */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    /* * 核心修正 1: 增加底部 padding 作為緩衝區 
+     * 這能讓最後一條訊息下方有一塊空白，避免被遮擋或緊貼。
+     */
+    padding: 10px 10px 20px 10px; 
+    background: #fff;
+    scroll-behavior: smooth; /* 移到這裡與 js 滾動配合 */
+    max-height: none; /* 移除冗餘的 max-height，讓 flex: 1 接管 */
 }
 
-/* 訊息氣泡 */
+/* 訊息氣泡 (保持不變) */
 .message {
-  display: inline-block; /* 讓寬度跟文字內容自適應 */
-  padding: 8px 12px;
-  border-radius: 20px;
-  margin: 5px 0;
-  word-wrap: break-word;
-  max-width: 70%; /* 最多占訊息區 70% 寬度 */
-  font-size: 14px;
+    display: inline-block; 
+    padding: 8px 12px;
+    border-radius: 20px;
+    margin: 5px 0;
+    word-wrap: break-word;
+    max-width: 70%; 
+    font-size: 14px;
 }
 
 .message.user {
-  background-color: #dbeafe;
-  align-self: flex-end;
-  margin-left: auto;
-  text-align: right;
+    background-color: #dbeafe;
+    align-self: flex-end;
+    margin-left: auto;
+    text-align: right;
 }
 
 .message.other {
-  background-color: #dbeafe;
-  align-self: flex-start;
-  margin-right: auto;
-  text-align: left;
+    background-color: #dbeafe;
+    align-self: flex-start;
+    margin-right: auto;
+    text-align: left;
 }
 
 .message.system {
-  text-align: center;
-  color: #888;
-  font-style: italic;
-  background: none;
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    background: none;
 }
 
 /* 輸入區固定在 chat-box 下方 */
 .input-area {
-  display: flex;
-  padding: 10px;
-  background-color: #e0e0e0;
-  border-radius: 25px;
-  position: sticky;
-  bottom: 0;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-  margin: 10px;
+    /* * 核心修正 2: 移除 position: sticky 和 margin
+     * 當父容器 chat-box 已經是 flex-direction: column 時，
+     * 移除 sticky 和 margin: 10px 可以避免它佔用額外的滾動空間，
+     * 並確保它固定在 chat-box 的最底部。
+     */
+    display: flex;
+    padding: 10px;
+    background-color: #e0e0e0;
+    /* border-radius: 25px; 移除圓角，防止與 chat-box 的邊界產生視覺衝突 */
+    
+    bottom: 0; /* 雖然在 flex column 中不必要，但保留以防萬一 */
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    
+    /* 確保輸入區固定大小 */
+    flex-shrink: 0; 
 }
 
 .input-area input {
-  flex: 1;
-  padding: 10px 15px;
-  border-radius: 25px 0 0 25px;
-  border: none;
-  outline: none;
-  font-size: 14px;
+    flex: 1;
+    padding: 10px 15px;
+    /* 修正 input 圓角，讓它和 input-area 協調 */
+    border-radius: 25px; 
+    border: none;
+    outline: none;
+    font-size: 14px;
 }
 
 .input-area input:focus {
-  box-shadow: 0 0 5px #4a90e2;
+    box-shadow: 0 0 5px #4a90e2;
 }
 
 .input-area button {
-  margin-left: 10px;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 0 25px 25px 0;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s;
+    margin-left: 10px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 25px; /* 修正 button 圓角 */
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
 }
 
 .input-area button:hover {
-  background-color: #3b7ac3;
+    background-color: #3b7ac3;
+}
+
+.logout-button {
+  padding: 10px 20px;
+  cursor: pointer;
+  background-color: #ff4444; /* 紅色背景 */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .no-msg {
-  color: #aaa;
-  text-align: center;
-  margin-top: 20px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 20px;
 }
 
-
 .msg-time {
-  font-size: 0.75rem;
-  color: gray;
-  margin-left: 4px;
+    font-size: 0.75rem;
+    color: gray;
+    margin-left: 4px;
+}
+
+/* 載入更多按鈕 (優化) */
+.load-more-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.load-more-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.load-more-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 載入動畫 (保持不變) */
+.load-more-btn.loading::after {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border: 2px solid #ffffff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 已載入所有訊息提示 (保持不變) */
+.all-loaded {
+    text-align: center;
+    padding: 10px;
+    color: #999;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+/* 滾動條樣式 (保持不變) */
+.messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }

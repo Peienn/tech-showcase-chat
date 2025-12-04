@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/message');
 const User = require('../models/user');
-const { requireAuth } = require('../middlewares/auth');
 
 /**
  * GET /api/messages/history
  * 獲取歷史訊息
  */
-router.get('/history', requireAuth, async (req, res) => {
+router.get('/history', async (req, res) => {
   try {
+    console.log("123")
     const { limit = 100, offset = 0 } = req.query;
     
     const messages = await Message.getHistory(
@@ -27,6 +27,8 @@ router.get('/history', requireAuth, async (req, res) => {
     res.status(500).json({ error: '查詢歷史訊息失敗' });
   }
 });
+
+
 
 /**
  * GET /api/messages/search

@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 
 // 2. 自訂模組
 const config = require('./config');
-const { connectRedis ,redis, redisSub, redisSession,  postgre,} = require('./db');
+const { connectRedis ,redis, redisSub, redisSession, } = require('./db');
 const Message = require('./models/message');
 
 
@@ -75,7 +75,11 @@ connectRedis(io);
 // HTTP API 路由
 // ------------------------
 const authRouter = require('./routes/auth');
-app.use('/', authRouter); // 所以 API 變成 POST /auth/login
+const messageRouter = require('./routes/message');
+
+app.use('/', authRouter); 
+app.use('/api/message', messageRouter); 
+
 
 
 

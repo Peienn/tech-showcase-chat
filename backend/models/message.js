@@ -20,11 +20,11 @@ class Message {
 
 
       // 3. 寫到Redis的同時，也要寫到資料庫(但不包含system發出的)
-      // if (message.sender !== 'system') {
-      //   this.saveToDatabase(message).catch(err => {
-      //     console.error('❌ DB write error:', err);
-      //   });
-      // }
+      if (message.sender !== 'system') {
+        this.saveToDatabase(message).catch(err => {
+          console.error('❌ DB write error:', err);
+        });
+      }
 
     } catch (err) {
       console.error('Message.pushToRedis error:', err);
@@ -69,6 +69,7 @@ class Message {
    * 從 Redis 讀取最新訊息
    * @returns {Promise<Array>}
    */
+  // /register用
   static async getFromRedis() {
     try {
       const raw = await redis.lRange('chat:messages', 0, -1);
@@ -95,60 +96,68 @@ class Message {
         [limit, offset]
       );
       
+      
+      const messages = result.rows.map(row => ({
+        sender: row.username, // 使用者名稱
+        text: row.text,
+        time: row.time
+      }));
+      console.log(messages);
+
       // 反轉順序（最舊的在前）
-      return result.rows.reverse();
+      return messages.reverse();
     } catch (err) {
       console.error('Message.getHistory error:', err);
       throw err;
     }
   }
 
-  /**
-   * 根據時間範圍查詢訊息
-   * @param {Date} startDate 
-   * @param {Date} endDate 
-   * @returns {Promise<Array>}
-   */
-  static async getByDateRange(startDate, endDate) {
-    try {
-      const result = await postgre.query(
-        `SELECT username, text, created_at as time 
-         FROM messages 
-         WHERE created_at BETWEEN $1 AND $2 
-         ORDER BY created_at ASC`,
-        [startDate, endDate]
-      );
+  // /**
+  //  * 根據時間範圍查詢訊息
+  //  * @param {Date} startDate 
+  //  * @param {Date} endDate 
+  //  * @returns {Promise<Array>}
+  //  */
+  // static async getByDateRange(startDate, endDate) {
+  //   try {
+  //     const result = await postgre.query(
+  //       `SELECT username, text, created_at as time 
+  //        FROM messages 
+  //        WHERE created_at BETWEEN $1 AND $2 
+  //        ORDER BY created_at ASC`,
+  //       [startDate, endDate]
+  //     );
       
-      return result.rows;
-    } catch (err) {
-      console.error('Message.getByDateRange error:', err);
-      throw err;
-    }
-  }
+  //     return result.rows;
+  //   } catch (err) {
+  //     console.error('Message.getByDateRange error:', err);
+  //     throw err;
+  //   }
+  // }
 
-  /**
-   * 搜尋包含關鍵字的訊息
-   * @param {string} keyword 
-   * @param {number} limit 
-   * @returns {Promise<Array>}
-   */
-  static async search(keyword, limit = 50) {
-    try {
-      const result = await postgre.query(
-        `SELECT username, text, created_at as time 
-         FROM messages 
-         WHERE text ILIKE $1 
-         ORDER BY created_at DESC 
-         LIMIT $2`,
-        [`%${keyword}%`, limit]
-      );
+  // /**
+  //  * 搜尋包含關鍵字的訊息
+  //  * @param {string} keyword 
+  //  * @param {number} limit 
+  //  * @returns {Promise<Array>}
+  //  */
+  // static async search(keyword, limit = 50) {
+  //   try {
+  //     const result = await postgre.query(
+  //       `SELECT username, text, created_at as time 
+  //        FROM messages 
+  //        WHERE text ILIKE $1 
+  //        ORDER BY created_at DESC 
+  //        LIMIT $2`,
+  //       [`%${keyword}%`, limit]
+  //     );
       
-      return result.rows;
-    } catch (err) {
-      console.error('Message.search error:', err);
-      throw err;
-    }
-  }
+  //     return result.rows;
+  //   } catch (err) {
+  //     console.error('Message.search error:', err);
+  //     throw err;
+  //   }
+  // }
 }
 
 module.exports = Message;
