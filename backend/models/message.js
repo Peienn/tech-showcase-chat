@@ -88,13 +88,46 @@ class Message {
   // /register用
   static async getFromRedis() {
     try {
+      // 1️⃣ 先從 Redis 取
       const raw = await redis.lRange('chat:messages', 0, -1);
-      return raw.map(item => JSON.parse(item));
+  
+      if (raw.length > 49) {
+        console.log('📦 messages from redis');
+        return raw.map(item => JSON.parse(item));
+      }
+  
+      // 2️⃣ Redis 沒資料 → 從 PostgreSQL 撈
+      console.log('🗄 redis empty, loading from postgres');
+  
+      const { rows } = await postgre.query(`
+        SELECT username, text, created_at as time
+        FROM messages
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+      const messages = rows.map(row => ({
+        sender: row.username,
+        text: row.text,
+        time: row.time
+      }));
+  
+      messages.reverse(); // 由舊到新
+  
+      // 放進 Redis
+      const pipeline = redis.multi();
+      messages.forEach(msg => {
+        pipeline.rPush('chat:messages', JSON.stringify(msg));
+      });
+      await pipeline.exec();
+  
+      return messages;
+  
     } catch (err) {
       console.error('Message.getFromRedis error:', err);
       throw err;
     }
   }
+  
 
   /**
    * 從資料庫讀取歷史訊息
