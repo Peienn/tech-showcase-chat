@@ -26,6 +26,7 @@ function initChat(io) {
 
     
     // 接收訊息
+
     socket.on('chat-message', async (text) => {
       if (!socket.request.session || !socket.request.session.username) {
         socket.emit('auth-required');
@@ -38,8 +39,10 @@ function initChat(io) {
     // 使用者登出
     socket.on('user-logout', async () => {
       const leaveMsg = { sender: 'system', text: `${username} 離開聊天室`, time: new Date() };
+      console.log(leaveMsg);
       await Message.pushToRedis(leaveMsg);
       console.log(`${username} logged out`);
+      socket.disconnect(true);
     });
   });
 }

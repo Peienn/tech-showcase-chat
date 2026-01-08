@@ -7,45 +7,57 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # 前端 build 出來的靜態檔
       - ./dist:/usr/share/nginx/html:ro
-      # nginx 設定檔
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
-      - backend2
     networks:
       - tech-showcase-net
 
+
   backend:
     image: node:20
-    container_name: backend
     working_dir: /app
     volumes:
       - ./backend:/app
     command: sh -c "npm install && npm run dev"
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"   # 只給內部（nginx）用
     depends_on:
       - my-postgres
       - my-redis
     networks:
       - tech-showcase-net
 
-  backend2:
-    image: node:20
-    container_name: backend2
-    working_dir: /app
-    volumes:
-      - ./backend2:/app
-    command: sh -c "npm install && npm run dev"
-    ports:
-      - "3001:3001"
-    depends_on:
-      - my-postgres
-      - my-redis
-    networks:
-      - tech-showcase-net
+  # backend:
+  #   image: node:20
+  #   container_name: backend
+  #   working_dir: /app
+  #   volumes:
+  #     - ./backend:/app
+  #   command: sh -c "npm install && npm run dev"
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - my-postgres
+  #     - my-redis
+  #   networks:
+  #     - tech-showcase-net
+
+  # backend2:
+  #   image: node:20
+  #   container_name: backend2
+  #   working_dir: /app
+  #   volumes:
+  #     - ./backend2:/app
+  #   command: sh -c "npm install && npm run dev"
+  #   ports:
+  #     - "3001:3001"
+  #   depends_on:
+  #     - my-postgres
+  #     - my-redis
+  #   networks:
+  #     - tech-showcase-net
 
   my-postgres:
     image: postgres:17
@@ -69,6 +81,78 @@ services:
     networks:
       - tech-showcase-net
 
+  # =========================
+  #  Monitoring (新增)
+  # =========================
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - tech-showcase-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3005:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - tech-showcase-net
+    environment:
+      # 啟用 SMTP
+      - GF_SMTP_ENABLED=true
+      # Gmail SMTP
+      - GF_SMTP_HOST=smtp.gmail.com:587
+      - GF_SMTP_USER= #your gmail
+      - GF_SMTP_PASSWORD= # your gmail application password
+
+      # 寄件者名稱與地址
+      - GF_SMTP_FROM_ADDRESS= # your gmail
+      - GF_SMTP_FROM_NAME=Grafana
+
+  # =========================
+  # Exporters
+  # =========================
+  
+  redis-exporter:
+    image: oliver006/redis_exporter
+    container_name: redis-exporter
+    environment:
+      REDIS_ADDR: redis://my-redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - tech-showcase-net
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://chat_user:chat_user@my-postgres:5432/ChatRoom?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - tech-showcase-net
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx-exporter
+    command:
+      - -nginx.scrape-uri=http://my-nginx:8080/nginx_status
+    ports:
+      - "9113:9113"
+    networks:
+      - tech-showcase-net
+
+
 networks:
   tech-showcase-net:
     driver: bridge
@@ -76,3 +160,5 @@ networks:
 volumes:
   pgdata:
     external: true
+
+  grafana-data:

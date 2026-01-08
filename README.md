@@ -5,6 +5,12 @@
 
 ---
 
+##  Prometheus + Grafana 實現視覺化監控 - 2026/01/08
+
+- 透過 Prometheus 和 Exporter 搜集 Nginx, Redis, PostgreSQL 的資訊。
+- 利用 Grafana 獲取 Prometheus 的資訊後進行資料視覺化。
+
+
 ##  Docker 容器化技術，實現環境一致性與快速部署 - 2025/12/23
 
 - 將 Frontend (Nginx)、Backend、PostgreSQL 與 Redis 全部容器化，避免「在我的電腦可以跑，在別人的不行」的問題。

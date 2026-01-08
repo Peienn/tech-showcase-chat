@@ -1,15 +1,15 @@
 module.exports = {
   server: {
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3001,
   },
 
   redis: {
-    host: process.env.REDIS_HOST || '192.168.0.101',
+    host: process.env.REDIS_HOST || 'my-redis',
     port: process.env.REDIS_PORT || 6379,
   },
 
   postgresql: {
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || 'my-postgres',
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME || 'ChatRoom',
     user: process.env.DB_USER || 'chat_user',

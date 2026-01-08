@@ -92,7 +92,7 @@ class Message {
       const raw = await redis.lRange('chat:messages', 0, -1);
   
       if (raw.length > 49) {
-        console.log('📦 messages from redis');
+        //console.log('📦 messages from redis');
         return raw.map(item => JSON.parse(item));
       }
   

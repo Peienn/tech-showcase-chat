@@ -93,7 +93,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
   };
 
   useEffect(() => {
-    socketRef.current = io({ path: "/socket.io/", withCredentials: true });
+    //socketRef.current = io({ path: "/socket.io/", withCredentials: true });
+    socketRef.current = io({
+      path: "/socket.io/",
+      withCredentials: true,
+      transports: ["websocket"], // 只用 WebSocket
+    });
+    
 
     const socket = socketRef.current;
 
@@ -137,20 +143,26 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
 
   const handleLogout = async () => {
     if (!confirm("確定要登出嗎？")) return;
+  
     try {
-      if (socketRef.current) {
+      // 通知後端：使用者即將登出
+      if (socketRef.current && socketRef.current.connected) {
         socketRef.current.emit("user-logout");
-        socketRef.current.disconnect();
       }
-
-      await fetch("/logout", { method: "POST", credentials: "include" });
-
+  
+      // 呼叫後端清 session
+      await fetch("/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+  
       onLogout();
     } catch (error) {
       console.error("登出錯誤:", error);
       onLogout();
     }
   };
+  
 
   return (
     <div className="chatroom-container">
