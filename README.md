@@ -1,7 +1,9 @@
 # 多人聊天室專案說明
 
+
 使用 **Node.js + Express + Socket.IO** 作為後端，前端使用 **React + TypeScript + Vite**，實現多人即時聊天。
 
+![123](system_arch.png)
 
 ---
 

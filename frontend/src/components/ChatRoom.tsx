@@ -19,6 +19,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(50); // 跳過 Redis 的 50 條
+  const [isComposing, setIsComposing] = useState(false);
+
 
   // 確保 Ref 型別與 DOM 元素匹配
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -220,13 +222,21 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
         </div>
 
         <div className="input-area">
-          <input
+        <input
             type="text"
             value={input}
             placeholder="輸入訊息..."
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onCompositionStart={() => setIsComposing(true)}   // 中文輸入開始
+            onCompositionEnd={() => setIsComposing(false)}    // 中文輸入完成
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isComposing) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
+
           <button onClick={handleSend}>送出</button>
         </div>
       </div>
