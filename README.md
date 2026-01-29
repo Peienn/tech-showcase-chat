@@ -7,7 +7,7 @@
 
 ---
 
-##  MQ + AI Analysis Model - 2026/01/08
+##  MQ + AI Analysis Model - 2026/01/29
 
 - 透過 AI Analysis Model 分析聊天室訊息摘要
 - 利用 MQ 實現非同步處理、系統間解耦。
