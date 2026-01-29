@@ -7,6 +7,13 @@
 
 ---
 
+##  MQ + AI Analysis Model - 2026/01/08
+
+- 透過 AI Analysis Model 分析聊天室訊息摘要
+- 利用 MQ 實現非同步處理、系統間解耦。
+- 聊天室功能不會因為正在處理訊息分析，而停止服務。
+
+
 ##  Prometheus + Grafana 實現視覺化監控 - 2026/01/08
 
 - 透過 Prometheus 和 Exporter 搜集 Nginx, Redis, PostgreSQL 的資訊。
