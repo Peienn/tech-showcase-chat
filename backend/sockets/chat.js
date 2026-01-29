@@ -1,5 +1,6 @@
 // sockets/chat.js
 const Message = require('../models/message');
+const { triggerAnalysisOnce } = require("../services/analysisService");
 
 function initChat(io) {
   io.on('connection', async (socket) => {
@@ -34,6 +35,14 @@ function initChat(io) {
       }
       const message = { sender: username, text, time: new Date() };
       await Message.pushToRedis(message);
+
+      if (text.trim().toLowerCase() === "closed") {
+        console.log("Ready to anaylst");
+        await triggerAnalysisOnce(io);
+      }
+
+
+
     });
 
     // 使用者登出

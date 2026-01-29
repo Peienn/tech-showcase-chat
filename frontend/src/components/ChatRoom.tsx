@@ -13,6 +13,13 @@ interface Message {
   time?: string;
 }
 
+// ✅ 新增分析狀態介面
+interface AnalysisStatus {
+  isAnalyzing: boolean;
+  result: string | null;
+}
+
+
 const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -21,6 +28,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
   const [offset, setOffset] = useState(50); // 跳過 Redis 的 50 條
   const [isComposing, setIsComposing] = useState(false);
 
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>({
+    isAnalyzing: false,
+    result: null
+  });
 
   // 確保 Ref 型別與 DOM 元素匹配
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -123,17 +134,47 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
       window.location.reload();
     };
 
+    // ✅ 監聽分析開始
+    const handleAnalysisStarted = (data: { batchId: string }) => {
+      console.log("分析開始:", data);
+      setAnalysisStatus({
+        isAnalyzing: true,
+        result: null
+      });
+
+      startPolling(data.batchId);
+
+    };
+
+    // ✅ 監聽分析完成
+    const handleAnalysisDone = (data: { batch_id: string; analysis: string }) => {
+      console.log("分析完成:", data);
+
+      stopPolling();
+
+      setAnalysisStatus({
+        isAnalyzing: false,
+        result: data.analysis
+      });
+    };
+
     socket.on("history", handleHistory);
     socket.on("chat-message", handleChatMessage);
     socket.on("auth-required", handleAuthRequired);
+    socket.on("analysis-started", handleAnalysisStarted); 
+    socket.on("analysis-done", handleAnalysisDone); 
 
     return () => {
       socket.off("history", handleHistory);
       socket.off("chat-message", handleChatMessage);
       socket.off("auth-required", handleAuthRequired);
+      socket.off("analysis-started", handleAnalysisStarted); 
+      socket.off("analysis-done", handleAnalysisDone); 
       socket.disconnect();
     };
   }, []);
+
+
 
   const handleSend = () => {
     if (!input.trim() || !socketRef.current) return;
@@ -164,6 +205,42 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
       onLogout();
     }
   };
+
+  let pollingTimer: number | null = null;
+
+  const startPolling = (batchId: string) => {
+    if (pollingTimer) return; // 避免重複啟動
+
+    pollingTimer = window.setInterval(async () => {
+      try {
+        const res = await fetch(
+          `/api/webhook/analysis-polling?batch_id=${batchId}`
+        );
+        const data = await res.json();
+
+        if (data.status === "done") {
+          console.log("Polling 拿到分析結果");
+
+          stopPolling();
+
+          setAnalysisStatus({
+            isAnalyzing: false,
+            result: data.analysis
+          });
+        }
+      } catch (err) {
+        console.error("polling error", err);
+      }
+    }, 10000); // 每 3 秒
+  };
+
+  const stopPolling = () => {
+    if (pollingTimer) {
+      clearInterval(pollingTimer);
+      pollingTimer = null;
+    }
+  };
+
   
 
   return (
@@ -185,6 +262,77 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ name, onLogout }) => {
         <p className="chat-name">
           你的名字：<strong className="user-name-highlight">{name}</strong>
         </p>
+
+        {/* ✅ 美化版分析狀態顯示區域 */}
+{(analysisStatus.isAnalyzing || analysisStatus.result) && (
+  <div className="analysis-container">
+    {analysisStatus.isAnalyzing && (
+      <div className="analysis-card analyzing">
+        <div className="analysis-card-header">
+          <div className="header-left">
+            <div className="ai-avatar">
+              <span className="avatar-icon">🤖</span>
+              <div className="pulse-ring"></div>
+            </div>
+            <div className="header-text">
+              <h3>AI 助手</h3>
+              <p className="status-text">正在分析對話內容...</p>
+            </div>
+          </div>
+        </div>
+        <div className="analysis-card-body">
+          <div className="loading-animation">
+            <div className="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <p className="loading-text">使用先進的自然語言處理技術進行分析</p>
+          </div>
+        </div>
+      </div>
+    )}
+    
+    {analysisStatus.result && !analysisStatus.isAnalyzing && (
+      <div className="analysis-card completed">
+        <div className="analysis-card-header">
+          <div className="header-left">
+            <div className="ai-avatar success">
+              <span className="avatar-icon">✨</span>
+            </div>
+            <div className="header-text">
+              <h3>AI 分析報告</h3>
+              <p className="status-text">分析完成</p>
+            </div>
+          </div>
+          <button 
+            className="close-btn"
+            onClick={() => setAnalysisStatus({ isAnalyzing: false, result: null })}
+            title="關閉"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div className="analysis-card-body">
+          <div className="analysis-result-content">
+            <div className="result-icon">💡</div>
+            <div className="result-text">
+              {analysisStatus.result}
+            </div>
+          </div>
+        </div>
+        <div className="analysis-card-footer">
+          <div className="footer-info">
+            <span className="info-icon">ℹ️</span>
+            <span className="info-text">本分析結果由 AI 自動生成,僅供參考</span>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
         <div className="messages" ref={messagesContainerRef}>
           {hasMore && (

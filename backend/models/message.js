@@ -2,6 +2,58 @@
 const { redis, postgre } = require('../db');
 
 class Message {
+
+
+  static async getAnalysisResult(batch_id) {
+    try {
+      
+      const result = await postgre.query(
+        `
+        SELECT analysis
+        FROM analysis_results
+        WHERE batch_id = $1`,
+        [batch_id]
+      );
+
+      if (result.rows.length === 0) {
+        return null; // 沒有分析結果
+      }
+      
+      // 回傳分析結果文字
+      return result.rows[0].analysis;
+v
+    } catch (err) {
+      console.error("getAnalysisMessages error:", err);
+      throw err;
+    }
+  }
+
+  static async getAnalysisMessages(limit = 50) {
+    try {
+      
+      const result = await postgre.query(
+        `
+        SELECT username, text
+        FROM messages
+        ORDER BY created_at DESC
+        LIMIT $1
+        `,
+        [limit]
+      );
+  
+      // 最新在前 → 反轉，讓 AI 讀起來是「對話順序」
+      const messages = result.rows
+        .reverse()
+        .map(row => `${row.username}:${row.text}`);
+      return messages;
+        
+    } catch (err) {
+      console.error("getAnalysisMessages error:", err);
+      throw err;
+    }
+  }
+
+
   /**
    * 推送訊息到 Redis（快取 + Pub/Sub）
    * @param {Object} message - {sender, text, time}

@@ -58,6 +58,8 @@ const io = new Server(server, {
   transports: ['websocket', 'polling']
 });
 
+//把 io 存到 app.locals
+app.locals.io = io;
 
 // io.engine.use() 會將 session middleware 掛載到 Socket.IO 連線上
 // ★★★★★ 重點：將 sessionMiddleware 加到握手階段
@@ -76,10 +78,11 @@ connectRedis(io);
 // ------------------------
 const authRouter = require('./routes/auth');
 const messageRouter = require('./routes/message');
+const webhookRouter = require('./routes/webhook');
 
 app.use('/', authRouter); 
 app.use('/api/message', messageRouter); 
-
+app.use('/api/webhook', webhookRouter); 
 
 
 
